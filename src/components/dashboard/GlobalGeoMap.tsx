@@ -42,6 +42,13 @@ const getColorForCountry = (data: AggregatedCountryData | undefined): string => 
 };
 
 
+const countryNameMapping: { [key: string]: string } = {
+  "United States": "United States of America",
+  "Russian Federation": "Russia",
+  "Cote d'Ivoire": "Côte d'Ivoire",
+};
+
+
 const GlobalGeoMap: React.FC<GlobalGeoMapProps> = ({ h1n1MapData, h3n2MapData }) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const zoomBehavior = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
@@ -50,16 +57,23 @@ const GlobalGeoMap: React.FC<GlobalGeoMapProps> = ({ h1n1MapData, h3n2MapData })
   const aggregatedDataByCountry = useMemo(() => {
     const countryData = new Map<string, { h1n1: number; h3n2: number }>();
 
+    // Helper function to get the correct country name
+    const getMappedCountryName = (name: string) => countryNameMapping[name] || name;
+
     h1n1MapData.forEach(d => {
-      const entry = countryData.get(d.country) || { h1n1: 0, h3n2: 0 };
+      // 2. Use the mapped name for aggregation
+      const mappedName = getMappedCountryName(d.country);
+      const entry = countryData.get(mappedName) || { h1n1: 0, h3n2: 0 };
       entry.h1n1 += d.count;
-      countryData.set(d.country, entry);
+      countryData.set(mappedName, entry);
     });
 
     h3n2MapData.forEach(d => {
-      const entry = countryData.get(d.country) || { h1n1: 0, h3n2: 0 };
+      // 2. Use the mapped name for aggregation
+      const mappedName = getMappedCountryName(d.country);
+      const entry = countryData.get(mappedName) || { h1n1: 0, h3n2: 0 };
       entry.h3n2 += d.count;
-      countryData.set(d.country, entry);
+      countryData.set(mappedName, entry);
     });
 
     const dataMap = new Map<string, AggregatedCountryData>();
@@ -72,10 +86,6 @@ const GlobalGeoMap: React.FC<GlobalGeoMapProps> = ({ h1n1MapData, h3n2MapData })
         h1n1Perc: total > 0 ? data.h1n1 / total : 0,
       });
     });
-
-    if (dataMap.has("United States")) {
-      dataMap.set("United States of America", dataMap.get("United States")!);
-    }
 
     return dataMap;
   }, [h1n1MapData, h3n2MapData]);
@@ -125,13 +135,15 @@ const GlobalGeoMap: React.FC<GlobalGeoMapProps> = ({ h1n1MapData, h3n2MapData })
       .on("mouseover", (event, d: Feature<any, any>) => {
         const countryName = d.properties.name;
         const countryData = aggregatedDataByCountry.get(countryName);
+        d3.select(event.currentTarget).style('opacity', 0.7);
+        tooltip.style("visibility", "visible");
         if (countryData && countryData.total > 0) {
-          d3.select(event.currentTarget).style('opacity', 0.7);
-          tooltip.style("visibility", "visible")
-            .html(`<strong>${countryData.country}</strong><br/>
+          tooltip.html(`<strong>${countryData.country}</strong><br/>
                    <span style="color:var(--color-chart-1)">●</span> H1N1: ${countryData.h1n1.toLocaleString()}<br/>
                    <span style="color:var(--color-chart-2)">●</span> H3N2: ${countryData.h3n2.toLocaleString()}<br/>
                    Total: ${countryData.total.toLocaleString()}`);
+        } else {
+          tooltip.html(`<strong>${countryName}</strong><br/>No data available`);
         }
       })
       .on("mousemove", (event) => {
@@ -179,7 +191,8 @@ const GlobalGeoMap: React.FC<GlobalGeoMapProps> = ({ h1n1MapData, h3n2MapData })
 
     // 2. To ensure colors work in the downloaded file, we must embed the CSS variables.
     //    We get the computed styles from the document and create a <style> block.
-    const cssVars = ['--color-card', '--color-chart-1', '--color-chart-2', '--color-muted-foreground', '--color-background'];
+    const cssVars = ['--color-card', '--color-chart-1', '--color-chart-2', 
+      '--color-chart-3', '--color-muted-foreground-light', '--color-background'];
     const computedStyles = getComputedStyle(document.documentElement);
     let styleContent = ':root {';
     cssVars.forEach(v => {
@@ -189,13 +202,9 @@ const GlobalGeoMap: React.FC<GlobalGeoMapProps> = ({ h1n1MapData, h3n2MapData })
     
     const styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
     styleEl.textContent = styleContent;
-    svgNode.prepend(styleEl); // Add styles to the beginning of the cloned SVG
-
-    // 3. Serialize the cloned SVG to a string.
+    svgNode.prepend(styleEl);
     const serializer = new XMLSerializer();
     const svgString = serializer.serializeToString(svgNode);
-
-    // 4. Create a Blob and initiate the download.
     const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -227,7 +236,6 @@ const GlobalGeoMap: React.FC<GlobalGeoMapProps> = ({ h1n1MapData, h3n2MapData })
             <Button onClick={handleZoomReset} variant="outline" size="icon-sm" aria-label="Reset zoom">
                 <RefreshCcw className="size-4" />
             </Button>
-            {/* Add the new download button */}
             <Button onClick={handleDownloadSVG} variant="outline" size="icon-sm" aria-label="Download SVG">
               <Download className="size-4" />
             </Button>

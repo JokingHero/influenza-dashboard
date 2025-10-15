@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import * as d3 from 'd3';
-// FIX: Import timeParse along with timeFormat
 import { timeFormat, timeParse } from 'd3-time-format';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import VariantProgressionPlot from '../VariantProgressionPlot';
@@ -22,7 +21,6 @@ interface GlobalSituationReportProps {
 
 const GlobalSituationReport: React.FC<GlobalSituationReportProps> = ({ h1n1Data, h3n2Data, h1n1Totals, h3n2Totals, h1n1MapData, h3n2MapData }) => {
   const kpiData = useMemo(() => {
-    // KPI 1-3 calculations (no changes here)...
     const totalSequences = h1n1Totals.totalNumIsolates + h3n2Totals.totalNumIsolates;
     const totalCountries = h1n1Totals.totalNumCountries + h3n2Totals.totalNumCountries;
 
@@ -47,31 +45,18 @@ const GlobalSituationReport: React.FC<GlobalSituationReportProps> = ({ h1n1Data,
       else if (h3n2Last4Wks / totalLast4Wks > 0.6) dominantSubtype = 'H3N2';
     }
 
-    // --- START OF FIX for KPI 4: Last Updated ---
-    
-    // 1. Define the format string that matches your timestamp "10 July 2025 - 0530UTC"
-    //    %d: day of the month
-    //    %B: full month name (e.g., "July")
-    //    %Y: year with century
-    //    %H%M: hour and minute
     const parseDate = timeParse("%d %B %Y - %H%MUTC");
     const formatDate = timeFormat("%Y-%m-%d");
     let lastUpdated = '--';
 
     if (h1n1Totals && h1n1Totals.utcTimestamp) {
-      // 2. Use our specific parser instead of the generic new Date()
       const dateObj = parseDate(h1n1Totals.utcTimestamp);
-
-      // 3. The parser returns a valid Date object or `null` if it fails.
-      //    This is a much cleaner way to check for validity.
       if (dateObj) {
         lastUpdated = formatDate(dateObj);
       } else {
-        // This log will help if the format ever changes unexpectedly
         console.error(`Failed to parse timestamp: "${h1n1Totals.utcTimestamp}"`);
       }
     }
-    // --- END OF FIX ---
 
     return { totalSequences, totalCountries, dominantSubtype, lastUpdated };
   }, [h1n1Data, h3n2Data, h1n1Totals, h3n2Totals]);
