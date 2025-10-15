@@ -23,10 +23,15 @@ export type WeekRegionData = ContinentData[];
 export interface MapDataPoint {
   city: string;
   country: string;
-  countryCode: string;
   lat: string;
   lng: string;
   count: number;
 }
 
 export type GeoMapData = MapDataPoint[];
+
+export interface CountryCountTotal {
+  totalNumIsolates: number;
+  totalNumCountries: number;
+  utcTimestamp: string;
+}

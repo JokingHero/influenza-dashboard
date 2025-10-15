@@ -1,12 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { type WeekRegionData } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardAction } from '@/components/ui/card';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 interface VariantProgressionPlotProps {
   h1n1Data: WeekRegionData;
   h3n2Data: WeekRegionData;
 }
+
+type ViewType = 'proportions' | 'counts';
 
 interface TimePoint {
   date: Date;
@@ -17,13 +20,14 @@ interface TimePoint {
 const VariantProgressionPlot: React.FC<VariantProgressionPlotProps> = ({ h1n1Data, h3n2Data }) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [processedData, setProcessedData] = useState<TimePoint[]>([]);
+  const [view, setView] = useState<ViewType>('proportions');
 
   useEffect(() => {
     const processData = (data: WeekRegionData): Map<string, number> => {
       const weeklyCounts = new Map<string, number>();
       data.forEach(continent => {
         continent.weeklyData.forEach(week => {
-          const key = `${week.year}-W${week.weekNum.padStart(2, '0')}`;
+          const key = `${week.year}-W${String(week.weekNum).padStart(2, '0')}`;
           const currentCount = weeklyCounts.get(key) || 0;
           weeklyCounts.set(key, currentCount + week.numIsolates);
         });
@@ -33,13 +37,15 @@ const VariantProgressionPlot: React.FC<VariantProgressionPlotProps> = ({ h1n1Dat
 
     const h1n1Counts = processData(h1n1Data);
     const h3n2Counts = processData(h3n2Data);
-    
     const allWeeks = new Set([...h1n1Counts.keys(), ...h3n2Counts.keys()]);
 
     const combinedData: TimePoint[] = Array.from(allWeeks).map(weekKey => {
-      const [year, weekStr] = weekKey.split('-W');
+      const [yearStr, weekStr] = weekKey.split('-W');
+      const year = parseInt(yearStr, 10);
       const weekNum = parseInt(weekStr, 10);
-      const d = new Date(parseInt(year), 0, 1 + (weekNum - 1) * 7);
+      
+      // FIX 1: Using a more direct and robust date calculation from year and week number.
+      const d = new Date(year, 0, 1 + (weekNum - 1) * 7);
 
       return {
         date: d,
@@ -60,67 +66,89 @@ const VariantProgressionPlot: React.FC<VariantProgressionPlotProps> = ({ h1n1Dat
 
     const width = 800;
     const height = 400;
-    const margin = { top: 20, right: 30, bottom: 50, left: 60 };
+    const margin = { top: 40, right: 30, bottom: 50, left: 60 };
+    const colors = ['var(--color-chart-1)', 'var(--color-chart-2)'];
 
     const x = d3.scaleTime()
       .domain(d3.extent(processedData, d => d.date) as [Date, Date])
       .range([margin.left, width - margin.right]);
 
-    const y = d3.scaleLinear()
-      .domain([0, d3.max(processedData, d => Math.max(d.h1n1Count, d.h3n2Count)) as number])
-      .nice()
-      .range([height - margin.bottom, margin.top]);
-
-    const lineH1N1 = d3.line<TimePoint>()
-      .x(d => x(d.date))
-      .y(d => y(d.h1n1Count));
-
-    const lineH3N2 = d3.line<TimePoint>()
-      .x(d => x(d.date))
-      .y(d => y(d.h3n2Count));
-
+    const g = svg.append('g');
     svg.attr('viewBox', `0 0 ${width} ${height}`);
 
-    const g = svg.append('g');
+    if (view === 'counts') {
+      const y = d3.scaleLinear()
+        .domain([0, d3.max(processedData, d => Math.max(d.h1n1Count, d.h3n2Count)) as number])
+        .nice()
+        .range([height - margin.bottom, margin.top]);
 
-    g.append('path')
-      .datum(processedData)
-      .attr('fill', 'none')
-      .attr('stroke', 'var(--color-chart-1)')
-      .attr('stroke-width', 2)
-      .attr('d', lineH1N1);
+      const lineH1N1 = d3.line<TimePoint>().x(d => x(d.date)).y(d => y(d.h1n1Count));
+      const lineH3N2 = d3.line<TimePoint>().x(d => x(d.date)).y(d => y(d.h3n2Count));
 
-    g.append('path')
-      .datum(processedData)
-      .attr('fill', 'none')
-      .attr('stroke', 'var(--color-chart-2)')
-      .attr('stroke-width', 2)
-      .attr('d', lineH3N2);
-
-    g.append('g')
-      .attr('transform', `translate(0,${height - margin.bottom})`)
-      .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0));
-
-    g.append('g')
-      .attr('transform', `translate(${margin.left},0)`)
-      .call(d3.axisLeft(y));
+      g.append('path').datum(processedData).attr('fill', 'none').attr('stroke', colors[0]).attr('stroke-width', 2).attr('d', lineH1N1);
+      g.append('path').datum(processedData).attr('fill', 'none').attr('stroke', colors[1]).attr('stroke-width', 2).attr('d', lineH3N2);
       
-    // Legend
-    const legend = svg.append("g")
-      .attr("transform", `translate(${margin.left + 20}, ${margin.top})`);
+      g.append('g').attr('transform', `translate(${margin.left},0)`).call(d3.axisLeft(y).ticks(5, 's'));
+    
+    } else { // Proportions View
+        const normalizedData = processedData.map(d => {
+            const total = d.h1n1Count + d.h3n2Count;
+            return {
+                date: d.date,
+                h1n1: total > 0 ? d.h1n1Count / total : 0,
+                h3n2: total > 0 ? d.h3n2Count / total : 0
+            }
+        });
 
-    legend.append("circle").attr("cx",0).attr("cy",0).attr("r", 6).style("fill", "var(--color-chart-1)");
-    legend.append("text").attr("x", 10).attr("y", 0).text("H1N1").style("font-size", "12px").attr("alignment-baseline","middle");
-    legend.append("circle").attr("cx",0).attr("cy",20).attr("r", 6).style("fill", "var(--color-chart-2)");
-    legend.append("text").attr("x", 10).attr("y", 20).text("H3N2").style("font-size", "12px").attr("alignment-baseline","middle");
+        const stack = d3.stack().keys(['h1n1', 'h3n2']);
+        
+        // FIX 2: Use type assertion `as any` because d3.stack's types are strict, 
+        // but its implementation correctly ignores non-numeric properties like 'date'.
+        const series = stack(normalizedData as any);
+        
+        const y = d3.scaleLinear().domain([0, 1]).range([height - margin.bottom, margin.top]);
+        
+        const area = d3.area<any>()
+            .x(d => x(d.data.date))
+            .y0(d => y(d[0]))
+            .y1(d => y(d[1]));
 
-  }, [processedData]);
+        g.selectAll('.area').data(series).join('path').attr('class', 'area')
+            .attr('d', area).attr('fill', (d, i) => colors[i]);
+        
+        g.append('g').attr('transform', `translate(${margin.left},0)`)
+            .call(d3.axisLeft(y).ticks(5, '.0%'));
+    }
+
+    g.append('g').attr('transform', `translate(0,${height - margin.bottom})`)
+      .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0));
+      
+    const legend = svg.append("g").attr("transform", `translate(${margin.left}, 15)`);
+    legend.append("circle").attr("cx",0).attr("cy",0).attr("r", 6).style("fill", colors[0]);
+    legend.append("text").attr("x", 10).attr("y", 0).text("H1N1").style("font-size", "12px").attr("fill", "currentColor").attr("alignment-baseline","middle");
+    legend.append("circle").attr("cx",70).attr("cy",0).attr("r", 6).style("fill", colors[1]);
+    legend.append("text").attr("x", 80).attr("y", 0).text("H3N2").style("font-size", "12px").attr("fill", "currentColor").attr("alignment-baseline","middle");
+
+  }, [processedData, view]);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Variant Progression Over Time</CardTitle>
-        <CardDescription>Weekly submissions for H1N1 and H3N2 subtypes</CardDescription>
+        <div>
+          <CardTitle>Variant Progression & Dominance Over Time</CardTitle>
+          <CardDescription>
+            {view === 'counts' 
+              ? 'Raw weekly submissions for H1N1 and H3N2 subtypes.' 
+              : 'Relative weekly proportion of H1N1 vs. H3N2.'
+            }
+          </CardDescription>
+        </div>
+        <CardAction>
+          <ToggleGroup type="single" value={view} onValueChange={(value: ViewType) => value && setView(value)} size="sm">
+            <ToggleGroupItem value="proportions">Proportions</ToggleGroupItem>
+            <ToggleGroupItem value="counts">Raw Counts</ToggleGroupItem>
+          </ToggleGroup>
+        </CardAction>
       </CardHeader>
       <CardContent>
         <svg ref={svgRef} className="w-full h-auto" />
