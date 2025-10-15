@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-// import './App.css'; // This is now deleted
 import { Button } from './components/ui/button';
 import { Moon, Sun } from 'lucide-react';
 
@@ -74,18 +73,20 @@ function App() {
 
   return (
     <div className="container mx-auto p-4 md:p-8">
-      <header className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-4xl font-bold tracking-tight">Influenza Virus Dashboard</h1>
-          <p className="text-muted-foreground mt-2">
+      <header className="relative flex flex-col sm:flex-row sm:justify-center items-center gap-4 mb-8">
+        <div className="w-full text-center">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Influenza Virus Dashboard</h1>
+          <p className="text-muted-foreground mt-2 text-sm sm:text-base">
             Visualizing the circulation of H1N1 and H3N2 subtypes worldwide.
           </p>
         </div>
-        <Button variant="outline" size="icon" onClick={() => setIsDarkMode(!isDarkMode)}>
-          <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          <span className="sr-only">Toggle theme</span>
-        </Button>
+        <div className="sm:absolute sm:right-0 sm:top-1/2 sm:-translate-y-1/2">
+            <Button variant="outline" size="icon" onClick={() => setIsDarkMode(!isDarkMode)}>
+                <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                <span className="sr-only">Toggle theme</span>
+            </Button>
+        </div>
       </header>
 
       <main className="grid gap-6">
