@@ -125,23 +125,23 @@ const GlobalSituationReport: React.FC<GlobalSituationReportProps> = ({ h1n1Data,
 
       {/* Row 2: Global Variant Progression */}
       <div>
-        {h1n1Data.length > 0 && h3n2Data.length > 0 ? (
-          <VariantProgressionPlot h1n1Data={h1n1Data} h3n2Data={h3n2Data} />
-        ) : (
-          <PlaceholderCard title="Variant Progression Over Time" description="Data not available." />
-        )}
-      </div>
-
-      {/* Row 3: Geographic Distribution & Monthly Trends */}
-      <div className="grid gap-6 lg:grid-cols-5">
-        <div className="lg:col-span-3">
-          {h1n1MapData.length > 0 && h3n2MapData.length > 0 ? (
+        {h1n1MapData.length > 0 && h3n2MapData.length > 0 ? (
             <GlobalGeoMap h1n1MapData={h1n1MapData} h3n2MapData={h3n2MapData} />
           ) : (
             <PlaceholderCard title="Global Geographic Distribution" description="Data not available." />
           )}
+      </div>
+
+      {/* Row 3: Geographic Distribution & Monthly Trends */}
+      <div className="grid gap-6 lg:grid-cols-6">
+        <div className="lg:col-span-3">
+          {h1n1Data.length > 0 && h3n2Data.length > 0 ? (
+            <VariantProgressionPlot h1n1Data={h1n1Data} h3n2Data={h3n2Data} />
+          ) : (
+            <PlaceholderCard title="Variant Progression Over Time" description="Data not available." />
+          )}
         </div>
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-3">
           {h1n1Data.length > 0 && h3n2Data.length > 0 ? (
             <GlobalMonthlyCountsPlot h1n1Data={h1n1Data} h3n2Data={h3n2Data} />
           ) : (
