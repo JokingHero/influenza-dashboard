@@ -18,11 +18,9 @@ const GrowthDynamicsPlot: React.FC<GrowthDynamicsPlotProps> = ({ variant }) => {
       const prev = variant.cumLoc[i - 1];
       const curr = variant.cumLoc[i];
       const weeklyNew = curr.count - prev.count;
-      const growthRate = prev.count > 0 ? (weeklyNew / prev.count) : 0;
       data.push({
         yearweek: curr.yearweek.toString(),
         weeklyNew: weeklyNew,
-        growthRate: growthRate,
       });
     }
     return data;
@@ -39,20 +37,15 @@ const GrowthDynamicsPlot: React.FC<GrowthDynamicsPlotProps> = ({ variant }) => {
 
     const width = 800;
     const height = 400;
-    const margin = { top: 20, right: 60, bottom: 40, left: 60 };
+    const margin = { top: 40, right: 40, bottom: 70, left: 70 };
 
     const x = d3.scaleBand<string>()
       .domain(processedData.map(d => d.yearweek))
       .range([margin.left, width - margin.right])
       .padding(0.2);
 
-    const y0 = d3.scaleLinear()
+    const y = d3.scaleLinear()
       .domain([0, d3.max(processedData, d => d.weeklyNew) as number])
-      .nice()
-      .range([height - margin.bottom, margin.top]);
-
-    const y1 = d3.scaleLinear()
-      .domain(d3.extent(processedData, d => d.growthRate) as [number, number])
       .nice()
       .range([height - margin.bottom, margin.top]);
 
@@ -64,49 +57,45 @@ const GrowthDynamicsPlot: React.FC<GrowthDynamicsPlotProps> = ({ variant }) => {
       .data(processedData)
       .join('rect')
         .attr('x', d => x(d.yearweek) as number)
-        .attr('y', d => y0(d.weeklyNew))
+        .attr('y', d => y(d.weeklyNew))
         .attr('width', x.bandwidth())
-        .attr('height', d => y0(0) - y0(d.weeklyNew))
+        .attr('height', d => y(0) - y(d.weeklyNew))
         .attr('fill', 'var(--color-chart-3)');
-
-    // LINE (Weekly Growth Rate)
-    const line = d3.line<{ yearweek: string, growthRate: number }>()
-      .x(d => (x(d.yearweek) as number) + x.bandwidth() / 2)
-      .y(d => y1(d.growthRate));
-
-    svg.append('path')
-      .datum(processedData)
-      .attr('fill', 'none')
-      .attr('stroke', 'var(--color-chart-1)')
-      .attr('stroke-width', 2)
-      .attr('d', line);
 
     // X AXIS
     const xAxis = svg.append('g')
       .attr('transform', `translate(0, ${height - margin.bottom})`)
-      .call(d3.axisBottom(x).tickValues(x.domain().filter((_d, i) => i % 3 === 0))); // Show fewer ticks
-    xAxis.selectAll("text").style("font-size", "12px").attr('fill', 'var(--color-foreground)');
+      .call(d3.axisBottom(x)
+        .tickValues(x.domain().filter((_d, i) => i % 2 === 0)) // Show ticks more often
+        .tickFormat(d => `W${d.substring(4)}`) // Format to "W##"
+      );
+    // Un-rotated labels
+    xAxis.selectAll("text")
+      .style("font-size", "20px") 
+      .attr('fill', 'var(--color-foreground)')
+      .style("text-anchor", "middle");
     xAxis.selectAll(".domain, .tick line").attr('stroke', 'var(--color-border)');
 
-    // Y0 AXIS (Left - Bars)
-    const y0Axis = svg.append('g')
+    // Y AXIS (Left - Bars)
+    const yAxis = svg.append('g')
       .attr('transform', `translate(${margin.left}, 0)`)
-      .call(d3.axisLeft(y0).ticks(5, 's'));
-    y0Axis.selectAll("text").style("font-size", "12px").attr('fill', 'var(--color-foreground)');
-    y0Axis.selectAll(".domain, .tick line").attr('stroke', 'var(--color-border)');
-
-    // Y1 AXIS (Right - Line)
-    const y1Axis = svg.append('g')
-      .attr('transform', `translate(${width - margin.right}, 0)`)
-      .call(d3.axisRight(y1).ticks(5, '.0%'));
-    y1Axis.selectAll("text").style("font-size", "12px").attr('fill', 'var(--color-foreground)');
-    y1Axis.selectAll(".domain, .tick line").attr('stroke', 'var(--color-border)');
+      .call(d3.axisLeft(y).ticks(5, 's'));
+    yAxis.selectAll("text").style("font-size", "20px").attr('fill', 'var(--color-foreground)');
+    yAxis.selectAll(".domain, .tick line").attr('stroke', 'var(--color-border)');
     
-    // Y Axis Labels
+    // Y Axis Label
     svg.append("text").attr("transform", "rotate(-90)").attr("y", 15).attr("x", 0 - (height / 2))
-      .style("text-anchor", "middle").style("font-size", "12px").attr("fill", "var(--color-foreground)").text("Weekly New Detections");
-    svg.append("text").attr("transform", "rotate(-90)").attr("y", width - 15).attr("x", 0 - (height / 2))
-      .style("text-anchor", "middle").style("font-size", "12px").attr("fill", "var(--color-foreground)").text("Weekly Growth Rate (%)");
+      .style("text-anchor", "middle").style("font-size", "22px").attr("fill", "var(--color-foreground)").text("Weekly New Detections");
+    
+    // X Axis Label
+    svg.append("text")
+      .attr("text-anchor", "middle")
+      .attr("x", width / 2)
+      .attr("y", height - 5)
+      .style("font-size", "22px")
+      .attr("fill", "var(--color-foreground)")
+      .text("2025 Weeks");
+
 
   }, [processedData]);
   
@@ -114,7 +103,7 @@ const GrowthDynamicsPlot: React.FC<GrowthDynamicsPlotProps> = ({ variant }) => {
     <Card>
       <CardHeader>
         <CardTitle>Growth Dynamics</CardTitle>
-        <CardDescription>Weekly new detections (bars) and growth rate (line).</CardDescription>
+        <CardDescription>Weekly new detections for the selected variant.</CardDescription>
       </CardHeader>
       <CardContent>
         <svg ref={svgRef} className="w-full h-auto" />

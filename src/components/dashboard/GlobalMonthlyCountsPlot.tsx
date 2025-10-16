@@ -145,7 +145,7 @@ const GlobalMonthlyCountsPlot: React.FC<GlobalMonthlyCountsPlotProps> = ({ h1n1D
       .attr("y", 20)
       .attr("x", -(height / 2))
       .style("font-size", "22px")
-      .style("fill", "hsl(var(--foreground))")
+      .style("fill", "var(--color-foreground)")
       .text("Number of Sequences");
       
     // X Axis Label
@@ -154,7 +154,7 @@ const GlobalMonthlyCountsPlot: React.FC<GlobalMonthlyCountsPlotProps> = ({ h1n1D
       .attr("x", width / 2)
       .attr("y", height)
       .style("font-size", "22px")
-      .style("fill", "hsl(var(--foreground))")
+      .style("fill", "var(--color-foreground)")
       .text("Month");
 
     // Cleanup tooltip on component unmount

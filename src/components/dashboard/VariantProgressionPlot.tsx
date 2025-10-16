@@ -137,7 +137,7 @@ const VariantProgressionPlot: React.FC<VariantProgressionPlotProps> = ({ h1n1Dat
       .attr("y", 20)
       .attr("x", -(height / 2))
       .style("font-size", "22px")
-      .style("fill", "hsl(var(--foreground))")
+      .style("fill", "var(--color-foreground)")
       .text(yAxisLabel); // Use dynamic label
       
     // X Axis Label
@@ -146,7 +146,7 @@ const VariantProgressionPlot: React.FC<VariantProgressionPlotProps> = ({ h1n1Dat
       .attr("x", width / 2)
       .attr("y", height - 25)
       .style("font-size", "22px")
-      .style("fill", "hsl(var(--foreground))")
+      .style("fill", "var(--color-foreground)")
       .text("Date");
 
   }, [processedData, view]);

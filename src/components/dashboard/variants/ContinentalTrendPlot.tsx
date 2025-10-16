@@ -7,6 +7,17 @@ interface ContinentalTrendPlotProps {
   variant: EmergingVariant | null;
 }
 
+const abbreviateContinent = (name: string): string => {
+  switch (name) {
+    case 'NorthAmerica':
+      return 'N. America';
+    case 'SouthAmerica':
+      return 'S. America';
+    default:
+      return name;
+  }
+};
+
 const ContinentalTrendPlot: React.FC<ContinentalTrendPlotProps> = ({ variant }) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
 
@@ -20,17 +31,27 @@ const ContinentalTrendPlot: React.FC<ContinentalTrendPlotProps> = ({ variant }) 
 
     const svg = d3.select(svgRef.current);
     svg.selectAll('*').remove();
+    
+    const continentOrder = ["NorthAmerica", "Africa", "Europe", "Oceania", "Asia", "SouthAmerica"];
+
+    const sortedData = [...processedData].sort((a, b) => {
+        const indexA = continentOrder.indexOf(a.continent);
+        const indexB = continentOrder.indexOf(b.continent);
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+    });
 
     const width = 800;
     const height = 400;
-    const margin = { top: 40, right: 20, bottom: 40, left: 50 };
+    const margin = { top: 40, right: 120, bottom: 70, left: 90 };
 
-    const continents = processedData.map(d => d.continent);
-    const months = Array.from(new Set(processedData.flatMap(d => d.monthlydata.map(md => md.date))))
+    const abbreviatedContinents = sortedData.map(d => abbreviateContinent(d.continent));
+    const months = Array.from(new Set(sortedData.flatMap(d => d.monthlydata.map(md => md.date))))
       .sort((a, b) => a.localeCompare(b));
 
     const x0 = d3.scaleBand<string>()
-      .domain(continents)
+      .domain(abbreviatedContinents)
       .range([margin.left, width - margin.right])
       .padding(0.2);
 
@@ -40,8 +61,8 @@ const ContinentalTrendPlot: React.FC<ContinentalTrendPlotProps> = ({ variant }) 
       .padding(0.05);
 
     const y = d3.scaleLinear()
-      .domain([0, d3.max(processedData, d => d3.max(d.monthlydata, md => md.count)) as number])
-      .nice()
+      // Corrected Domain: The data represents a percentage, so the scale is 0-100.
+      .domain([0, 100])
       .range([height - margin.bottom, margin.top]);
 
     const color = d3.scaleOrdinal<string>()
@@ -65,10 +86,13 @@ const ContinentalTrendPlot: React.FC<ContinentalTrendPlotProps> = ({ variant }) 
       .style("font-size", "12px");
 
     const continentGroups = g.selectAll(".continent-group")
-      .data(processedData)
+      .data(sortedData)
       .join("g")
       .attr("class", "continent-group")
-      .attr("transform", d => `translate(${x0(d.continent)}, 0)`);
+      .attr("transform", d => `translate(${x0(abbreviateContinent(d.continent))}, 0)`);
+
+    const parseMonth = d3.timeParse("%Y%m");
+    const formatTooltipMonth = d3.timeFormat("%B %Y");
 
     continentGroups.selectAll("rect")
       .data(d => d.monthlydata)
@@ -79,8 +103,10 @@ const ContinentalTrendPlot: React.FC<ContinentalTrendPlotProps> = ({ variant }) 
         .attr("height", d => y(0) - y(d.count))
         .attr("fill", d => color(d.date))
       .on("mouseover", (event, d) => {
+        const dateObj = parseMonth(d.date);
         tooltip.style("visibility", "visible")
-          .html(`<strong>Month:</strong> ${d.date}<br/><strong>Prevalence:</strong> ${d.count.toFixed(2)}`);
+          // Corrected Tooltip: Show the value with a '%' sign.
+          .html(`<strong>Month:</strong> ${dateObj ? formatTooltipMonth(dateObj) : d.date}<br/><strong>Prevalence:</strong> ${d.count.toFixed(1)}%`);
       })
       .on("mousemove", (event) => {
         tooltip.style("top", (event.pageY - 10) + "px")
@@ -94,37 +120,55 @@ const ContinentalTrendPlot: React.FC<ContinentalTrendPlotProps> = ({ variant }) 
       .attr("transform", `translate(0, ${height - margin.bottom})`)
       .call(d3.axisBottom(x0).tickSizeOuter(0));
     
-    xAxis.selectAll("text").style("font-size", "12px").attr('fill', 'var(--color-foreground)');
+    xAxis.selectAll("text")
+      .style("font-size", "20px")
+      .attr('fill', 'var(--color-foreground)')
+      .style("text-anchor", "middle");
     xAxis.selectAll(".domain, .tick line").attr('stroke', 'var(--color-border)');
 
     const yAxis = g.append("g")
       .attr("transform", `translate(${margin.left}, 0)`)
-      .call(d3.axisLeft(y).ticks(5, "s"));
+      // Corrected Tick Format: Append '%' to the number directly.
+      .call(d3.axisLeft(y).ticks(5).tickFormat(d => `${d}%`));
 
-    yAxis.selectAll("text").style("font-size", "12px").attr('fill', 'var(--color-foreground)');
+    yAxis.selectAll("text").style("font-size", "20px").attr('fill', 'var(--color-foreground)');
     yAxis.selectAll(".domain, .tick line").attr('stroke', 'var(--color-border)');
+
+    // Corrected Y-axis Label
+    svg.append("text").attr("transform", "rotate(-90)").attr("y", 15).attr("x", 0 - (height / 2))
+        .style("text-anchor", "middle").style("font-size", "22px")
+        .attr("fill", "var(--color-foreground)").text("Monthly Prevalence (%)");
+
+    // X Axis Label
+    svg.append("text").attr("text-anchor", "middle").attr("x", width / 2).attr("y", height - 5)
+        .style("font-size", "22px").attr("fill", "var(--color-foreground)").text("Continent");
 
     const legend = svg.append("g")
       .attr("font-family", "sans-serif")
-      .attr("font-size", 10)
+      .attr("font-size", 20)
       .attr("text-anchor", "start")
       .selectAll("g")
       .data(months)
       .join("g")
-      .attr("transform", (d, i) => `translate(${width - margin.right - 100}, ${margin.top + i * 20})`);
+      .attr("transform", (d, i) => `translate(${width - margin.right + 10}, ${margin.top + i * 30})`);
+    
+    const formatLegendMonth = d3.timeFormat("%b '%y");
 
     legend.append("rect")
       .attr("x", 0)
-      .attr("width", 19)
-      .attr("height", 19)
+      .attr("width", 25)
+      .attr("height", 25)
       .attr("fill", color);
 
     legend.append("text")
-      .attr("x", 24)
-      .attr("y", 9.5)
+      .attr("x", 30)
+      .attr("y", 12.5)
       .attr("dy", "0.35em")
       .attr('fill', 'var(--color-foreground)')
-      .text(d => d);
+      .text(d => {
+        const dateObj = parseMonth(d);
+        return dateObj ? formatLegendMonth(dateObj) : d;
+      });
 
     return () => { tooltip.remove(); };
   }, [processedData]);
@@ -132,8 +176,11 @@ const ContinentalTrendPlot: React.FC<ContinentalTrendPlotProps> = ({ variant }) 
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">Continental Trend</CardTitle>
-        <CardDescription className="text-xs">Prevalence by continent for the last 3 months.</CardDescription>
+        <CardTitle>Continental Trend</CardTitle>
+        <CardDescription>
+          {/* Corrected Description */}
+          Monthly prevalence of the variant by continent. Data reflects the most recent 3 months available.
+        </CardDescription>
       </CardHeader>
       <CardContent className="px-2">
         <svg ref={svgRef} className="w-full h-auto" />

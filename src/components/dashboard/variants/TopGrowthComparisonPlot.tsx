@@ -113,12 +113,12 @@ const TopGrowthComparisonPlot: React.FC<TopGrowthComparisonPlotProps> = ({ varia
     // Y Axis Label
     svg.append("text").attr("text-anchor", "middle").attr("transform", "rotate(-90)")
       .attr("y", 20).attr("x", -(height / 2)).style("font-size", "22px")
-      .style("fill", "hsl(var(--foreground))").text("Cumulative Sequence Counts");
+      .style("fill", "var(--color-foreground)").text("Cumulative Sequence Counts");
       
     // X Axis Label
     svg.append("text").attr("text-anchor", "middle").attr("x", width / 2)
       .attr("y", height - 5).style("font-size", "22px")
-      .style("fill", "hsl(var(--foreground))").text("Date");
+      .style("fill", "var(--color-foreground)").text("Date");
 
     // --- Tooltip Logic ---
     const tooltip = d3.select('body').append('div')
