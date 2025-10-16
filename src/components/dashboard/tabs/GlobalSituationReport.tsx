@@ -20,8 +20,9 @@ interface GlobalSituationReportProps {
 
 const GlobalSituationReport: React.FC<GlobalSituationReportProps> = ({ h1n1Data, h3n2Data, h1n1Totals, h3n2Totals, h1n1MapData, h3n2MapData }) => {
   const kpiData = useMemo(() => {
-    const totalSequences = h1n1Totals.totalNumIsolates + h3n2Totals.totalNumIsolates;
-    const totalCountries = h1n1Totals.totalNumCountries + h3n2Totals.totalNumCountries;
+    const totalSequences = (h1n1Totals?.totalNumIsolates || 0) + (h3n2Totals?.totalNumIsolates || 0);
+    const allCountryEntries = [...h1n1MapData, ...h3n2MapData];
+    const totalCountries = new Set(allCountryEntries.map(entry => entry.country)).size;
 
     const allWeeklyData = [
       ...h1n1Data.flatMap(c => c.weeklyData.map(w => ({ ...w, variant: 'h1n1' }))),
