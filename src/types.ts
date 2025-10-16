@@ -84,3 +84,24 @@ export interface EmergingVariantRiser {
   prevRanking: number;
   topRankingRiserScore: number;
 }
+
+// --- Surveillance Metrics ---
+export interface LatestStrain {
+  country: string;
+  strain_name: string;
+  accession_id: string;
+  collection_date: string; // YYYY-MM-DD
+}
+
+export interface LatestStrainSubmitted {
+  country: string;
+  strain_name: string;
+  accession_id: string;
+  submission_date: string; // YYYY-MM-DD
+}
+
+export interface CountryCount {
+  country: string;
+  total: number;
+  numcountrytotal_last4wks: number;
+}
