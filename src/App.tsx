@@ -86,7 +86,7 @@ function App() {
       <div className="container mx-auto p-4 md:p-6 lg:p-8">
         <header className="relative flex flex-col sm:flex-row sm:justify-between items-center gap-4 mb-6">
           <div className="text-center sm:text-left">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Influenza Surveillance Monitor</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Influenza Surveillance Dashboard</h1>
             <p className="text-muted-foreground mt-1 text-sm sm:text-base">
               Global H1N1 & H3N2 Subtype Circulation
             </p>

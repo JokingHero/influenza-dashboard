@@ -43,8 +43,6 @@ const VariantProgressionPlot: React.FC<VariantProgressionPlotProps> = ({ h1n1Dat
       const [yearStr, weekStr] = weekKey.split('-W');
       const year = parseInt(yearStr, 10);
       const weekNum = parseInt(weekStr, 10);
-      
-      // FIX 1: Using a more direct and robust date calculation from year and week number.
       const d = new Date(year, 0, 1 + (weekNum - 1) * 7);
 
       return {
@@ -64,10 +62,14 @@ const VariantProgressionPlot: React.FC<VariantProgressionPlotProps> = ({ h1n1Dat
     const svg = d3.select(svgRef.current);
     svg.selectAll('*').remove();
 
-    const width = 800;
-    const height = 400;
-    const margin = { top: 40, right: 30, bottom: 50, left: 60 };
+    // --- SIZING & MARGINS ---
+    const width = 900;
+    const height = 500;
+    const margin = { top: 40, right: 30, bottom: 90, left: 90 };
     const colors = ['var(--color-chart-1)', 'var(--color-chart-2)'];
+    
+    // Dynamic Y-axis label based on view
+    const yAxisLabel = view === 'counts' ? 'Weekly Sequence Count' : 'Proportion of Submissions';
 
     const x = d3.scaleTime()
       .domain(d3.extent(processedData, d => d.date) as [Date, Date])
@@ -88,7 +90,8 @@ const VariantProgressionPlot: React.FC<VariantProgressionPlotProps> = ({ h1n1Dat
       g.append('path').datum(processedData).attr('fill', 'none').attr('stroke', colors[0]).attr('stroke-width', 2).attr('d', lineH1N1);
       g.append('path').datum(processedData).attr('fill', 'none').attr('stroke', colors[1]).attr('stroke-width', 2).attr('d', lineH3N2);
       
-      g.append('g').attr('transform', `translate(${margin.left},0)`).call(d3.axisLeft(y).ticks(5, 's'));
+      const yAxis = g.append('g').attr('transform', `translate(${margin.left},0)`).call(d3.axisLeft(y).ticks(5, 's'));
+      yAxis.selectAll("text").style("font-size", "20px");
     
     } else { // Proportions View
         const normalizedData = processedData.map(d => {
@@ -101,11 +104,7 @@ const VariantProgressionPlot: React.FC<VariantProgressionPlotProps> = ({ h1n1Dat
         });
 
         const stack = d3.stack().keys(['h1n1', 'h3n2']);
-        
-        // FIX 2: Use type assertion `as any` because d3.stack's types are strict, 
-        // but its implementation correctly ignores non-numeric properties like 'date'.
         const series = stack(normalizedData as any);
-        
         const y = d3.scaleLinear().domain([0, 1]).range([height - margin.bottom, margin.top]);
         
         const area = d3.area<any>()
@@ -116,18 +115,39 @@ const VariantProgressionPlot: React.FC<VariantProgressionPlotProps> = ({ h1n1Dat
         g.selectAll('.area').data(series).join('path').attr('class', 'area')
             .attr('d', area).attr('fill', (d, i) => colors[i]);
         
-        g.append('g').attr('transform', `translate(${margin.left},0)`)
+        const yAxis = g.append('g').attr('transform', `translate(${margin.left},0)`)
             .call(d3.axisLeft(y).ticks(5, '.0%'));
+        yAxis.selectAll("text").style("font-size", "20px");
     }
 
-    g.append('g').attr('transform', `translate(0,${height - margin.bottom})`)
-      .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0));
+    const xAxis = g.append('g').attr('transform', `translate(0,${height - margin.bottom})`)
+      .call(d3.axisBottom(x).ticks(width / 100).tickSizeOuter(0));
+    xAxis.selectAll("text").style("font-size", "20px");
       
     const legend = svg.append("g").attr("transform", `translate(${margin.left}, 15)`);
-    legend.append("circle").attr("cx",0).attr("cy",0).attr("r", 6).style("fill", colors[0]);
-    legend.append("text").attr("x", 10).attr("y", 0).text("H1N1").style("font-size", "12px").attr("fill", "currentColor").attr("alignment-baseline","middle");
-    legend.append("circle").attr("cx",70).attr("cy",0).attr("r", 6).style("fill", colors[1]);
-    legend.append("text").attr("x", 80).attr("y", 0).text("H3N2").style("font-size", "12px").attr("fill", "currentColor").attr("alignment-baseline","middle");
+    legend.append("circle").attr("cx",0).attr("cy", 0).attr("r", 15).style("fill", colors[0]);
+    legend.append("text").attr("x", 25).attr("y", 0).text("H1N1").style("font-size", "20px").attr("fill", "currentColor").attr("alignment-baseline","middle");
+    legend.append("circle").attr("cx", 100).attr("cy", 0).attr("r", 15).style("fill", colors[1]);
+    legend.append("text").attr("x", 125).attr("y", 0).text("H3N2").style("font-size", "20px").attr("fill", "currentColor").attr("alignment-baseline","middle");
+
+    // Y Axis Label
+    svg.append("text")
+      .attr("text-anchor", "middle")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 20)
+      .attr("x", -(height / 2))
+      .style("font-size", "22px")
+      .style("fill", "hsl(var(--foreground))")
+      .text(yAxisLabel); // Use dynamic label
+      
+    // X Axis Label
+    svg.append("text")
+      .attr("text-anchor", "middle")
+      .attr("x", width / 2)
+      .attr("y", height - 25)
+      .style("font-size", "22px")
+      .style("fill", "hsl(var(--foreground))")
+      .text("Date");
 
   }, [processedData, view]);
 
@@ -135,11 +155,11 @@ const VariantProgressionPlot: React.FC<VariantProgressionPlotProps> = ({ h1n1Dat
     <Card>
       <CardHeader>
         <div>
-          <CardTitle>Variant Progression & Dominance Over Time</CardTitle>
+          <CardTitle>Weekly Variant Progression Over Time</CardTitle>
           <CardDescription>
             {view === 'counts' 
-              ? 'Raw weekly submissions for H1N1 and H3N2 subtypes.' 
-              : 'Relative weekly proportion of H1N1 vs. H3N2.'
+              ? 'Weekly counts for H1N1 and H3N2.' 
+              : 'Weekly proportion of H1N1 vs. H3N2.'
             }
           </CardDescription>
         </div>

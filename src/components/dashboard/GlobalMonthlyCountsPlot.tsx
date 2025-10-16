@@ -8,28 +8,43 @@ interface GlobalMonthlyCountsPlotProps {
   h3n2Data: WeekRegionData;
 }
 
+interface MonthlyDataPoint {
+  month: string;
+  h1n1Count: number;
+  h3n2Count: number;
+  totalCount: number;
+}
+
 const GlobalMonthlyCountsPlot: React.FC<GlobalMonthlyCountsPlotProps> = ({ h1n1Data, h3n2Data }) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
 
-  const processedData = useMemo(() => {
-    const monthlyCounts = new Map<string, number>();
-    
-    const aggregateData = (data: WeekRegionData) => {
-      data.forEach(continent => {
-        continent.weeklyData.forEach(week => {
-          const d = new Date(week.year, 0, 1 + (parseInt(week.weekNum) - 1) * 7);
-          const monthKey = d3.timeFormat('%Y-%m')(d);
-          const currentCount = monthlyCounts.get(monthKey) || 0;
-          monthlyCounts.set(monthKey, currentCount + week.numIsolates);
-        });
+  const processedData: MonthlyDataPoint[] = useMemo(() => {
+    const monthlyCounts = new Map<string, { h1n1: number; h3n2: number }>();
+    h1n1Data.forEach(continent => {
+      continent.weeklyData.forEach(week => {
+        const d = new Date(week.year, 0, 1 + (parseInt(week.weekNum) - 1) * 7);
+        const monthKey = d3.timeFormat('%Y-%m')(d);
+        const currentCounts = monthlyCounts.get(monthKey) || { h1n1: 0, h3n2: 0 };
+        currentCounts.h1n1 += week.numIsolates;
+        monthlyCounts.set(monthKey, currentCounts);
       });
-    }
-
-    aggregateData(h1n1Data);
-    aggregateData(h3n2Data);
-
+    });
+    h3n2Data.forEach(continent => {
+      continent.weeklyData.forEach(week => {
+        const d = new Date(week.year, 0, 1 + (parseInt(week.weekNum) - 1) * 7);
+        const monthKey = d3.timeFormat('%Y-%m')(d);
+        const currentCounts = monthlyCounts.get(monthKey) || { h1n1: 0, h3n2: 0 };
+        currentCounts.h3n2 += week.numIsolates;
+        monthlyCounts.set(monthKey, currentCounts);
+      });
+    });
     return Array.from(monthlyCounts.entries())
-      .map(([month, count]) => ({ month, count }))
+      .map(([month, counts]) => ({
+        month,
+        h1n1Count: counts.h1n1,
+        h3n2Count: counts.h3n2,
+        totalCount: counts.h1n1 + counts.h3n2,
+      }))
       .sort((a, b) => a.month.localeCompare(b.month));
   }, [h1n1Data, h3n2Data]);
 
@@ -39,44 +54,113 @@ const GlobalMonthlyCountsPlot: React.FC<GlobalMonthlyCountsPlotProps> = ({ h1n1D
     const svg = d3.select(svgRef.current);
     svg.selectAll('*').remove();
 
-    const width = 800;
-    const height = 400;
-    const margin = { top: 20, right: 30, bottom: 70, left: 60 };
+    const width = 900;
+    const height = 500;
+    const margin = { top: 30, right: 30, bottom: 90, left: 90 };
 
-    const x = d3.scaleBand()
+    const x = d3.scaleBand<string>()
       .domain(processedData.map(d => d.month))
       .range([margin.left, width - margin.right])
       .padding(0.2);
 
     const y = d3.scaleLinear()
-      .domain([0, d3.max(processedData, d => d.count) as number])
+      .domain([0, d3.max(processedData, d => d.totalCount) as number])
       .nice()
       .range([height - margin.bottom, margin.top]);
 
     svg.attr('viewBox', `0 0 ${width} ${height}`);
 
-    const g = svg.append('g');
+    // Tooltip setup (using the preferred popover style)
+    const tooltip = d3.select('body').append('div')
+      .attr("class", "d3-tooltip")
+      .style("position", "absolute")
+      .style("visibility", "hidden")
+      .style("background", "var(--color-popover)")
+      .style("color", "var(--color-popover-foreground)")
+      .style("border", "1px solid var(--color-border)")
+      .style("padding", "8px")
+      .style("border-radius", "var(--radius)")
+      .style("pointer-events", "none")
+      .style("font-size", "12px");
 
-    g.selectAll('rect')
+    // Draw the bars with the new color
+    const bars = svg.append('g')
+      .selectAll('rect')
       .data(processedData)
       .join('rect')
-      .attr('x', d => x(d.month) as number)
-      .attr('y', d => y(d.count))
-      .attr('width', x.bandwidth())
-      .attr('height', d => y(0) - y(d.count))
-      .attr('fill', 'var(--color-chart-4)');
+        .attr('x', d => x(d.month) as number)
+        .attr('y', d => y(d.totalCount))
+        .attr('width', x.bandwidth())
+        .attr('height', d => y(0) - y(d.totalCount))
+        .attr('fill', 'var(--color-chart-3)');
 
-    const xAxis = g.append('g')
+    // Tooltip events
+    bars.on('mouseover', function (event, d) {
+        d3.select(this).attr('fill', 'var(--color-primary)');
+        tooltip.style('visibility', 'visible');
+      })
+      .on('mousemove', function (event, d) {
+        tooltip
+          .html(`
+            <div class="font-bold mb-1">${d.month}</div>
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span style="color:var(--color-chart-1)">●</span> H1N1: <strong>${d.h1n1Count.toLocaleString()}</strong>
+            </div>
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span style="color:var(--color-chart-2)">●</span> H3N2: <strong>${d.h3n2Count.toLocaleString()}</strong>
+            </div>
+            <div class="mt-1 border-t pt-1">Total: <strong>${d.totalCount.toLocaleString()}</strong></div>
+          `)
+          .style('top', `${event.pageY - 10}px`)
+          .style('left', `${event.pageX + 10}px`);
+      })
+      .on('mouseout', function () {
+        // Revert to the new base color on mouseout
+        d3.select(this).attr('fill', 'var(--color-chart-3)'); // <<< COLOR CHANGED HERE
+        tooltip.style('visibility', 'hidden');
+      });
+
+    // X Axis
+    const xAxis = svg.append('g')
       .attr('transform', `translate(0,${height - margin.bottom})`)
-      .call(d3.axisBottom(x).tickSizeOuter(0).tickValues(x.domain().filter((_d, i) => i % 3 === 0)));
-    
+      // Filter ticks to prevent overlap. Shows roughly every 4th month.
+      .call(d3.axisBottom(x).tickValues(x.domain().filter((_d, i) => i % 4 === 0)));
+      
     xAxis.selectAll("text")
       .attr("transform", "translate(-10,0)rotate(-45)")
-      .style("text-anchor", "end");
+      .style("text-anchor", "end")
+      .style("font-size", "20px");
 
-    g.append('g')
+    // Y Axis 
+    const yAxis = svg.append('g')
       .attr('transform', `translate(${margin.left},0)`)
       .call(d3.axisLeft(y).ticks(5, "s"));
+      
+    yAxis.selectAll("text").style("font-size", "20px");
+
+    // Y Axis Label
+    svg.append("text")
+      .attr("text-anchor", "middle")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 20)
+      .attr("x", -(height / 2))
+      .style("font-size", "22px")
+      .style("fill", "hsl(var(--foreground))")
+      .text("Number of Sequences");
+      
+    // X Axis Label
+    svg.append("text")
+      .attr("text-anchor", "middle")
+      .attr("x", width / 2)
+      .attr("y", height)
+      .style("font-size", "22px")
+      .style("fill", "hsl(var(--foreground))")
+      .text("Month");
+
+    // Cleanup tooltip on component unmount
+    return () => {
+      tooltip.remove();
+    };
 
   }, [processedData]);
 
@@ -84,9 +168,12 @@ const GlobalMonthlyCountsPlot: React.FC<GlobalMonthlyCountsPlotProps> = ({ h1n1D
     <Card>
       <CardHeader>
         <CardTitle>Global Submissions by Month</CardTitle>
-        <CardDescription>Total number of sequences submitted globally per month.</CardDescription>
+        <CardDescription>
+          Total number of sequences submitted globally per month. Hover over a bar for details.
+        </CardDescription>
       </CardHeader>
       <CardContent>
+        {/* SVG is no longer interactive, so cursor classes are removed */}
         <svg ref={svgRef} className="w-full h-auto" />
       </CardContent>
     </Card>
