@@ -202,10 +202,10 @@ const GlobalGeoMap: React.FC<GlobalGeoMapProps> = ({ h1n1MapData, h3n2MapData })
             Loading map...
           </div>
         ) : (
-          <div className="relative">
+          <div className="relative mt-10 mb-8 sm:mt-0 sm:mb-0">
             <svg ref={svgRef} className="w-full h-auto bg-background cursor-grab active:cursor-grabbing" />
             
-            <div className="absolute top-2 left-1/2 -translate-x-1/2 flex flex-row gap-1.5 sm:left-auto sm:right-2 sm:translate-x-0 sm:flex-col">
+            <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex flex-row gap-1.5 sm:left-auto sm:right-2 sm:top-2 sm:translate-x-0 sm:flex-col">
               <Button onClick={handleZoomIn} variant="outline" size="icon-sm" aria-label="Zoom in">
                 <Plus className="size-4" />
               </Button>
@@ -220,7 +220,7 @@ const GlobalGeoMap: React.FC<GlobalGeoMapProps> = ({ h1n1MapData, h3n2MapData })
               </Button>
             </div>
 
-            <div className="absolute bottom-2 left-2 flex items-center gap-4 text-xs bg-background/70 p-2 rounded-md backdrop-blur-sm">
+            <div className="absolute -bottom-10 left-1/2 w-max max-w-[90%] -translate-x-1/2 flex flex-wrap justify-center items-center gap-x-4 gap-y-1 text-xs bg-background/70 p-2 rounded-md backdrop-blur-sm sm:left-2 sm:bottom-2 sm:w-auto sm:max-w-none sm:translate-x-0 sm:justify-start">
               <div className="flex items-center gap-1.5"><div className="size-3 rounded-full" style={{backgroundColor: 'var(--color-chart-2)'}} /> H3N2 dominated</div>
               <div className="flex items-center gap-1.5"><div className="size-3 rounded-full" style={{backgroundColor: 'var(--color-chart-3)'}} /> Mixed </div>
               <div className="flex items-center gap-1.5"><div className="size-3 rounded-full" style={{backgroundColor: 'var(--color-chart-1)'}} /> H1N1 dominated</div>
