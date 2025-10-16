@@ -55,7 +55,7 @@ const CountryContributionPlot: React.FC<CountryContributionPlotProps> = ({ data 
         .attr('width', d => x(d.total) - margin.left)
         .attr('height', y.bandwidth())
         .attr('fill', barColor)
-      .on('mouseover', function(event, d) {
+      .on('mouseover', function(_event, d) {
         d3.select(this).style('opacity', 0.8);
         tooltip.style('visibility', 'visible')
           .html(`<strong>${d.country}</strong><br/>Total Submissions: ${d.total.toLocaleString()}`);

@@ -113,7 +113,7 @@ const VariantProgressionPlot: React.FC<VariantProgressionPlotProps> = ({ h1n1Dat
             .y1(d => y(d[1]));
 
         g.selectAll('.area').data(series).join('path').attr('class', 'area')
-            .attr('d', area).attr('fill', (d, i) => colors[i]);
+            .attr('d', area).attr('fill', (_d, i) => colors[i]);
         
         const yAxis = g.append('g').attr('transform', `translate(${margin.left},0)`)
             .call(d3.axisLeft(y).ticks(5, '.0%'));
