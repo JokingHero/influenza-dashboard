@@ -101,7 +101,7 @@ const ContinentalTrendPlot: React.FC<ContinentalTrendPlotProps> = ({ variant }) 
         .attr("width", x1.bandwidth())
         .attr("height", d => y(0) - y(d.count))
         .attr("fill", d => color(d.date))
-      .on("mouseover", (event, d) => {
+      .on("mouseover", (_event, d) => {
         const dateObj = parseMonth(d.date);
         tooltip.style("visibility", "visible")
           .html(`<strong>Month:</strong> ${dateObj ? formatTooltipMonth(dateObj) : d.date}<br/><strong>Prevalence:</strong> ${d.count.toFixed(1)}%`);
@@ -147,7 +147,7 @@ const ContinentalTrendPlot: React.FC<ContinentalTrendPlotProps> = ({ variant }) 
       .selectAll("g")
       .data(months)
       .join("g")
-      .attr("transform", (d, i) => `translate(${width - margin.right + 10}, ${margin.top + i * 30})`);
+      .attr("transform", (_d, i) => `translate(${width - margin.right + 10}, ${margin.top + i * 30})`);
     
     const formatLegendMonth = d3.timeFormat("%b '%y");
 

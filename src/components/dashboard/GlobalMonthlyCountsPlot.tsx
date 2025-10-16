@@ -94,7 +94,7 @@ const GlobalMonthlyCountsPlot: React.FC<GlobalMonthlyCountsPlotProps> = ({ h1n1D
         .attr('fill', 'var(--color-chart-3)');
 
     // Tooltip events
-    bars.on('mouseover', function (event, d) {
+    bars.on('mouseover', function (_event, _d) {
         d3.select(this).attr('fill', 'var(--color-primary)');
         tooltip.style('visibility', 'visible');
       })
