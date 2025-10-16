@@ -59,7 +59,7 @@ const GlobalSituationReport: React.FC<GlobalSituationReportProps> = ({ h1n1Data,
     }
 
     return { totalSequences, totalCountries, dominantSubtype, lastUpdated };
-  }, [h1n1Data, h3n2Data, h1n1Totals, h3n2Totals]);
+  }, [h1n1Data, h3n2Data, h1n1Totals, h3n2Totals, h1n1MapData, h3n2MapData]);
 
 
   return (
