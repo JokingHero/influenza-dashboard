@@ -11,7 +11,8 @@ type WorldAtlas = Topology<{
 }>;
 
 export const MapDataProvider = ({ children }: { children: ReactNode }) => {
-  const { data: topoJsonData, loading: isLoading } = useFetchData<WorldAtlas>('/world-110m.json');
+  const baseUrl = import.meta.env.BASE_URL;
+  const { data: topoJsonData, loading: isLoading } = useFetchData<WorldAtlas>(`${baseUrl}world-110m.json`);
 
   // useMemo ensures this only runs when the data changes which is never!
   const worldAtlas = useMemo(() => {
