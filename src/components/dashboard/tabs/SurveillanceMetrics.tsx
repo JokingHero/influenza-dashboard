@@ -19,17 +19,18 @@ const SurveillanceMetrics = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const baseUrl = import.meta.env.BASE_URL;
         const [
           collectionsH1, collectionsH3,
           submissionsH1, submissionsH3,
           countryCountsH1, countryCountsH3,
         ] = await Promise.all([
-          fetch('/variant-tracker/latestStrains_h1n1.json').then(res => res.json()),
-          fetch('/variant-tracker/latestStrains_h3n2.json').then(res => res.json()),
-          fetch('/variant-tracker/latestStrainsSubmitted_h1n1.json').then(res => res.json()),
-          fetch('/variant-tracker/latestStrainsSubmitted_h3n2.json').then(res => res.json()),
-          fetch('/variant-tracker/countryCount_h1n1.json').then(res => res.json()),
-          fetch('/variant-tracker/countryCount_h3n2.json').then(res => res.json()),
+          fetch(`${baseUrl}variant-tracker/latestStrains_h1n1.json`).then(res => res.json()),
+           fetch(`${baseUrl}variant-tracker/latestStrains_h3n2.json`).then(res => res.json()),
+          fetch(`${baseUrl}variant-tracker/latestStrainsSubmitted_h1n1.json`).then(res => res.json()),
+          fetch(`${baseUrl}variant-tracker/latestStrainsSubmitted_h3n2.json`).then(res => res.json()),
+          fetch(`${baseUrl}variant-tracker/countryCount_h1n1.json`).then(res => res.json()),
+          fetch(`${baseUrl}variant-tracker/countryCount_h3n2.json`).then(res => res.json()),
         ]);
         
         setAllCollections([...collectionsH1, ...collectionsH3]);

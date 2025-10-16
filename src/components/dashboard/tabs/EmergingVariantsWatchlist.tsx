@@ -46,9 +46,10 @@ const EmergingVariantsWatchlist = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const baseUrl = import.meta.env.BASE_URL;
         const [recentVariantsRes, topRisersRes] = await Promise.all([
-          fetch('/emerging-variant/emergVar_recentVariants_mocked.json'),
-          fetch('/emerging-variant/emergVar_topRankingRisers_mocked.json'),
+          fetch(`${baseUrl}emerging-variant/emergVar_recentVariants_mocked.json`),
+          fetch(`${baseUrl}emerging-variant/emergVar_topRankingRisers_mocked.json`),
         ]);
 
         if (!recentVariantsRes.ok || !topRisersRes.ok) {
@@ -109,9 +110,9 @@ const EmergingVariantsWatchlist = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
+          
+          <EmergingVariantGeoMap variant={selectedVariant} />
 
-          <EmergingVariantGeoMap variant={selectedVariant} />     
-               
           <div className="grid gap-6 lg:grid-cols-2">
             <GrowthDynamicsPlot variant={selectedVariant} />
             <ContinentalTrendPlot variant={selectedVariant} />
