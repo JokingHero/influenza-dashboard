@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { type EmergingVariant, type EmergingVariantRiser } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -112,10 +112,13 @@ const EmergingVariantsWatchlist = () => {
             Antigenic Distance: {selectedVariant.average_antigenic_distance} — Deep dive into the selected variant's characteristics and spread.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-6 lg:grid-cols-2">
-          <GrowthDynamicsPlot variant={selectedVariant} />
-          <div className="flex flex-col gap-6">
-            <EmergingVariantGeoMap variant={selectedVariant} />
+        <CardContent className="flex flex-col gap-6">
+          {/* Row 1: Geo Map (full width) */}
+          <EmergingVariantGeoMap variant={selectedVariant} />
+          
+          {/* Row 2: 50/50 split for other plots */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            <GrowthDynamicsPlot variant={selectedVariant} />
             <ContinentalTrendPlot variant={selectedVariant} />
           </div>
         </CardContent>
