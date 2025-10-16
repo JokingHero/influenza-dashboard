@@ -9,7 +9,6 @@ import GlobalGeoMap from '../GlobalGeoMap';
 import GlobalMonthlyCountsPlot from '../GlobalMonthlyCountsPlot';
 import PlaceholderCard from '../PlaceholderCard';
 
-
 interface GlobalSituationReportProps {
   h1n1Data: WeekRegionData;
   h3n2Data: WeekRegionData;
@@ -64,7 +63,6 @@ const GlobalSituationReport: React.FC<GlobalSituationReportProps> = ({ h1n1Data,
 
   return (
     <div className="grid gap-6">
-      {/* Row 1: Headline KPIs */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -108,7 +106,6 @@ const GlobalSituationReport: React.FC<GlobalSituationReportProps> = ({ h1n1Data,
         </Card>
       </div>
 
-      {/* Row 2: Global Variant Progression */}
       <div>
         {h1n1MapData.length > 0 && h3n2MapData.length > 0 ? (
             <GlobalGeoMap h1n1MapData={h1n1MapData} h3n2MapData={h3n2MapData} />
@@ -117,7 +114,6 @@ const GlobalSituationReport: React.FC<GlobalSituationReportProps> = ({ h1n1Data,
           )}
       </div>
 
-      {/* Row 3: Geographic Distribution & Monthly Trends */}
       <div className="grid gap-6 lg:grid-cols-6">
         <div className="lg:col-span-3">
           {h1n1Data.length > 0 && h3n2Data.length > 0 ? (

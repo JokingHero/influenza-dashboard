@@ -1,14 +1,9 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import * as d3 from 'd3';
-import * as topojson from 'topojson-client';
-import type { FeatureCollection, GeoJsonProperties } from 'geojson';
-import type { Topology, GeometryCollection } from 'topojson-specification';
+import type { Feature, GeoJsonProperties } from 'geojson';
 import { type EmergingVariant } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-
-type WorldAtlas = Topology<{
-  countries: GeometryCollection<GeoJsonProperties>;
-}>;
+import { useMapData } from '@/contexts/MapDataContext';
 
 interface EmergingVariantGeoMapProps {
   variant: EmergingVariant | null;
@@ -16,7 +11,7 @@ interface EmergingVariantGeoMapProps {
 
 const EmergingVariantGeoMap: React.FC<EmergingVariantGeoMapProps> = ({ variant }) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const [world, setWorld] = useState<FeatureCollection | null>(null);
+  const { worldAtlas: world, isLoading: isWorldLoading } = useMapData();
 
   const mapData = useMemo(() => {
     if (!variant) return [];
@@ -24,16 +19,10 @@ const EmergingVariantGeoMap: React.FC<EmergingVariantGeoMapProps> = ({ variant }
   }, [variant]);
 
   useEffect(() => {
-    fetch('/world-110m.json')
-      .then(response => response.json())
-      .then((data: WorldAtlas) => {
-        const countries = topojson.feature(data, data.objects.countries as GeometryCollection);
-        setWorld(countries);
-      });
-  }, []);
-
-  useEffect(() => {
-    if (!svgRef.current || !world) return;
+    if (!svgRef.current || !world || isWorldLoading) {
+      d3.select(svgRef.current).selectAll('*').remove();
+      return;
+    };
 
     const svg = d3.select(svgRef.current);
     svg.selectAll('*').remove();
@@ -52,16 +41,14 @@ const EmergingVariantGeoMap: React.FC<EmergingVariantGeoMapProps> = ({ variant }
 
     const g = svg.append('g');
 
-    // Draw base map with styles matching GlobalGeoMap
     g.selectAll('path')
-      .data(world.features)
+      .data(world.features as Feature<any, GeoJsonProperties>[])
       .join('path')
       .attr('d', pathGenerator)
       .attr('fill', 'var(--color-muted-foreground-light)')
       .attr('stroke', 'var(--color-background)')
       .attr('stroke-width', 0.5);
 
-    // If there's no data, we stop after drawing the base map.
     if (mapData.length === 0) {
         return;
     };
@@ -73,11 +60,9 @@ const EmergingVariantGeoMap: React.FC<EmergingVariantGeoMapProps> = ({ variant }
       
     const parseDate = d3.timeParse("%Y%m%d");
     const dates = mapData.map(d => parseDate(d.dt)).filter(d => d !== null) as Date[];
-    const dateExtent = d3.extent(dates) as [Date, Date];
-
-    // Create a continuous color scale from light yellow to bright red
+    const dateExtent = d3.extent(dates);
     const colorInterpolator = d3.interpolate('hsl(60, 80%, 70%)', 'hsl(0, 90%, 55%)');
-    const colorScale = d3.scaleSequential(colorInterpolator).domain(dateExtent);
+    const colorScale = d3.scaleSequential(colorInterpolator).domain(dateExtent as [Date, Date]);
 
     // --- Tooltip ---
     const tooltip = d3.select("body").append("div")
@@ -160,7 +145,7 @@ const EmergingVariantGeoMap: React.FC<EmergingVariantGeoMapProps> = ({ variant }
 
 
     return () => { tooltip.remove(); };
-  }, [world, mapData]);
+  }, [world, mapData, isWorldLoading]); 
 
   return (
     <Card>
@@ -169,11 +154,19 @@ const EmergingVariantGeoMap: React.FC<EmergingVariantGeoMapProps> = ({ variant }
         <CardDescription className="text-xs">Recency-aware map of variant detections. Circle color indicates recency, size indicates count.</CardDescription>
       </CardHeader>
       <CardContent className="relative px-0 pb-0">
-        <svg ref={svgRef} className="w-full h-auto bg-background" />
-        {mapData.length === 0 && (
-             <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm">
-                No geographic data for this variant.
+        {isWorldLoading ? (
+            <div className="flex items-center justify-center h-[200px] sm:h-[400px] text-muted-foreground text-sm bg-muted/20">
+                Loading map...
             </div>
+        ) : (
+          <>
+            <svg ref={svgRef} className="w-full h-auto bg-background" />
+            {mapData.length === 0 && (
+                <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm">
+                    No geographic data for this variant.
+                </div>
+            )}
+          </>
         )}
       </CardContent>
     </Card>

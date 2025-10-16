@@ -70,7 +70,7 @@ const GlobalMonthlyCountsPlot: React.FC<GlobalMonthlyCountsPlotProps> = ({ h1n1D
 
     svg.attr('viewBox', `0 0 ${width} ${height}`);
 
-    // Tooltip setup (using the preferred popover style)
+    // Tooltip
     const tooltip = d3.select('body').append('div')
       .attr("class", "d3-tooltip")
       .style("position", "absolute")
@@ -83,7 +83,6 @@ const GlobalMonthlyCountsPlot: React.FC<GlobalMonthlyCountsPlotProps> = ({ h1n1D
       .style("pointer-events", "none")
       .style("font-size", "12px");
 
-    // Draw the bars with the new color
     const bars = svg.append('g')
       .selectAll('rect')
       .data(processedData)
@@ -115,8 +114,7 @@ const GlobalMonthlyCountsPlot: React.FC<GlobalMonthlyCountsPlotProps> = ({ h1n1D
           .style('left', `${event.pageX + 10}px`);
       })
       .on('mouseout', function () {
-        // Revert to the new base color on mouseout
-        d3.select(this).attr('fill', 'var(--color-chart-3)'); // <<< COLOR CHANGED HERE
+        d3.select(this).attr('fill', 'var(--color-chart-3)');
         tooltip.style('visibility', 'hidden');
       });
 
@@ -157,7 +155,6 @@ const GlobalMonthlyCountsPlot: React.FC<GlobalMonthlyCountsPlotProps> = ({ h1n1D
       .style("fill", "var(--color-foreground)")
       .text("Month");
 
-    // Cleanup tooltip on component unmount
     return () => {
       tooltip.remove();
     };

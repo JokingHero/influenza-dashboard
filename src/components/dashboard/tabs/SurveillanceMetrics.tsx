@@ -49,8 +49,6 @@ const SurveillanceMetrics = () => {
     if (loading || error) return { kpiData: {}, countryContributionData: [], recentCollections: [], recentSubmissions: [] };
 
     // --- KPI & Country Contribution Processing ---
-    
-    // Latency calculation remains for the KPI Card
     const collectionDateMap = new Map<string, string>();
     allCollections.forEach(s => {
       collectionDateMap.set(s.accession_id, s.collection_date);
@@ -78,8 +76,6 @@ const SurveillanceMetrics = () => {
     });
     
     const topSubmittingCountry = [...countryData.entries()].sort((a, b) => b[1].last4wks - a[1].last4wks)[0]?.[0] || 'N/A';
-    
-    // Prepare simplified data for the plot, removing latency
     const countryContribution = Array.from(countryData.entries())
       .map(([country, data]) => ({ country, total: data.total }))
       .sort((a, b) => b.total - a.total)
@@ -114,7 +110,6 @@ const SurveillanceMetrics = () => {
 
   return (
     <div className="grid gap-6">
-      {/* Row 1: KPIs */}
       <div className="grid gap-4 md:grid-cols-2">
          <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -138,10 +133,8 @@ const SurveillanceMetrics = () => {
         </Card>
       </div>
       
-      {/* Row 2: Country Contribution */}
       <CountryContributionPlot data={countryContributionData} />
 
-      {/* Row 3: Raw Data Tables */}
       <div className="grid gap-6 lg:grid-cols-2">
           <Card className="min-w-0">
             <CardHeader><CardTitle>Most Recent Sample Collections</CardTitle></CardHeader>

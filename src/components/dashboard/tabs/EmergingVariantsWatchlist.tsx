@@ -9,12 +9,8 @@ import EmergingVariantGeoMap from '../variants/EmergingVariantGeoMap';
 import ContinentalTrendPlot from '../variants/ContinentalTrendPlot';
 
 
-// Helper function to calculate the weekly growth rate
 const calculateWeeklyGrowthRate = (cumLoc: { count: number }[]): number => {
   if (!cumLoc || cumLoc.length < 2) return 0;
-
-  // Ensure data is sorted chronologically if it's not already guaranteed
-  // For this mock data, it is sorted.
 
   const weeklyGrowthRates: number[] = [];
   for (let i = 1; i < cumLoc.length; i++) {
@@ -113,10 +109,9 @@ const EmergingVariantsWatchlist = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
-          {/* Row 1: Geo Map (full width) */}
-          <EmergingVariantGeoMap variant={selectedVariant} />
-          
-          {/* Row 2: 50/50 split for other plots */}
+
+          <EmergingVariantGeoMap variant={selectedVariant} />     
+               
           <div className="grid gap-6 lg:grid-cols-2">
             <GrowthDynamicsPlot variant={selectedVariant} />
             <ContinentalTrendPlot variant={selectedVariant} />
@@ -140,7 +135,7 @@ const EmergingVariantsWatchlist = () => {
 
   return (
     <div className="grid gap-6">
-      {/* Row 1: Master View */}
+
       <div className="grid gap-6 lg:grid-cols-2">
         <EmergingVariantsTable
           variants={variants}
@@ -150,7 +145,6 @@ const EmergingVariantsWatchlist = () => {
         <TopGrowthComparisonPlot variants={variants} />
       </div>
 
-      {/* Row 2: Detail View */}
       <Card className="border-primary/50 border-2">
         {detailViewContent}
       </Card>

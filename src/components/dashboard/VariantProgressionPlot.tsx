@@ -138,7 +138,7 @@ const VariantProgressionPlot: React.FC<VariantProgressionPlotProps> = ({ h1n1Dat
       .attr("x", -(height / 2))
       .style("font-size", "22px")
       .style("fill", "var(--color-foreground)")
-      .text(yAxisLabel); // Use dynamic label
+      .text(yAxisLabel);
       
     // X Axis Label
     svg.append("text")

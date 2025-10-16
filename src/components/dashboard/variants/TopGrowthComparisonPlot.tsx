@@ -150,7 +150,6 @@ const TopGrowthComparisonPlot: React.FC<TopGrowthComparisonPlotProps> = ({ varia
             let closestVariantData: { variant: EmergingVariant; point: EmergingVariantCumLoc } | null = null;
             let minDistance = Infinity;
 
-            // --- FIX: Use a for...of loop for better type inference ---
             for (const variant of filteredVariants) {
                 const i = bisectDate(variant.cumLoc, xDate, 1);
                 const d0 = variant.cumLoc[i - 1];
@@ -176,7 +175,6 @@ const TopGrowthComparisonPlot: React.FC<TopGrowthComparisonPlotProps> = ({ varia
                 }
             }
 
-            // --- TypeScript can now correctly infer the type of closestVariantData here ---
             if (closestVariantData) {
                 setHoveredVariant(closestVariantData.variant.uniqueId);
                 const { variant, point } = closestVariantData;

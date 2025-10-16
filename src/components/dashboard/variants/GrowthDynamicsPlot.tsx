@@ -69,7 +69,6 @@ const GrowthDynamicsPlot: React.FC<GrowthDynamicsPlotProps> = ({ variant }) => {
         .tickValues(x.domain().filter((_d, i) => i % 2 === 0)) // Show ticks more often
         .tickFormat(d => `W${d.substring(4)}`) // Format to "W##"
       );
-    // Un-rotated labels
     xAxis.selectAll("text")
       .style("font-size", "20px") 
       .attr('fill', 'var(--color-foreground)')

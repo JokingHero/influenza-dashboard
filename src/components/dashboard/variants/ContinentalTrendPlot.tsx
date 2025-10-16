@@ -61,7 +61,6 @@ const ContinentalTrendPlot: React.FC<ContinentalTrendPlotProps> = ({ variant }) 
       .padding(0.05);
 
     const y = d3.scaleLinear()
-      // Corrected Domain: The data represents a percentage, so the scale is 0-100.
       .domain([0, 100])
       .range([height - margin.bottom, margin.top]);
 
@@ -105,7 +104,6 @@ const ContinentalTrendPlot: React.FC<ContinentalTrendPlotProps> = ({ variant }) 
       .on("mouseover", (event, d) => {
         const dateObj = parseMonth(d.date);
         tooltip.style("visibility", "visible")
-          // Corrected Tooltip: Show the value with a '%' sign.
           .html(`<strong>Month:</strong> ${dateObj ? formatTooltipMonth(dateObj) : d.date}<br/><strong>Prevalence:</strong> ${d.count.toFixed(1)}%`);
       })
       .on("mousemove", (event) => {
@@ -128,13 +126,12 @@ const ContinentalTrendPlot: React.FC<ContinentalTrendPlotProps> = ({ variant }) 
 
     const yAxis = g.append("g")
       .attr("transform", `translate(${margin.left}, 0)`)
-      // Corrected Tick Format: Append '%' to the number directly.
       .call(d3.axisLeft(y).ticks(5).tickFormat(d => `${d}%`));
 
     yAxis.selectAll("text").style("font-size", "20px").attr('fill', 'var(--color-foreground)');
     yAxis.selectAll(".domain, .tick line").attr('stroke', 'var(--color-border)');
 
-    // Corrected Y-axis Label
+    // Y-axis Label
     svg.append("text").attr("transform", "rotate(-90)").attr("y", 15).attr("x", 0 - (height / 2))
         .style("text-anchor", "middle").style("font-size", "22px")
         .attr("fill", "var(--color-foreground)").text("Monthly Prevalence (%)");
@@ -178,7 +175,6 @@ const ContinentalTrendPlot: React.FC<ContinentalTrendPlotProps> = ({ variant }) 
       <CardHeader className="pb-2">
         <CardTitle>Continental Trend</CardTitle>
         <CardDescription>
-          {/* Corrected Description */}
           Monthly prevalence of the variant by continent. Data reflects the most recent 3 months available.
         </CardDescription>
       </CardHeader>
