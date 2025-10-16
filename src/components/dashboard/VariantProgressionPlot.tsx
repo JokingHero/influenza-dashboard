@@ -163,14 +163,14 @@ const VariantProgressionPlot: React.FC<VariantProgressionPlotProps> = ({ h1n1Dat
             }
           </CardDescription>
         </div>
+      </CardHeader>
+      <CardContent>
         <CardAction>
           <ToggleGroup type="single" value={view} onValueChange={(value: ViewType) => value && setView(value)} size="sm">
             <ToggleGroupItem value="proportions">Proportions</ToggleGroupItem>
             <ToggleGroupItem value="counts">Raw Counts</ToggleGroupItem>
           </ToggleGroup>
         </CardAction>
-      </CardHeader>
-      <CardContent>
         <svg ref={svgRef} className="w-full h-auto" />
       </CardContent>
     </Card>

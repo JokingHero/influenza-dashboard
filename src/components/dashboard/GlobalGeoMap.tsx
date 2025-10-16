@@ -205,7 +205,7 @@ const GlobalGeoMap: React.FC<GlobalGeoMapProps> = ({ h1n1MapData, h3n2MapData })
           <div className="relative">
             <svg ref={svgRef} className="w-full h-auto bg-background cursor-grab active:cursor-grabbing" />
             
-            <div className="absolute top-2 right-2 flex flex-col gap-1.5">
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 flex flex-row gap-1.5 sm:left-auto sm:right-2 sm:translate-x-0 sm:flex-col">
               <Button onClick={handleZoomIn} variant="outline" size="icon-sm" aria-label="Zoom in">
                 <Plus className="size-4" />
               </Button>
