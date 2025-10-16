@@ -1,75 +1,193 @@
-import PlaceholderCard from '../PlaceholderCard';
+import React, { useState, useEffect, useMemo } from 'react';
+import { type EmergingVariant, type EmergingVariantRiser } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowDown, ArrowUp } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import EmergingVariantsTable from '../variants/EmergingVariantsTable';
+import TopGrowthComparisonPlot from '../variants/TopGrowthComparisonPlot'; 
+import GrowthDynamicsPlot from '../variants/GrowthDynamicsPlot';
+import EmergingVariantGeoMap from '../variants/EmergingVariantGeoMap';
+import ContinentalTrendPlot from '../variants/ContinentalTrendPlot';
+
+
+// Helper function to calculate the weekly growth rate
+const calculateWeeklyGrowthRate = (cumLoc: { count: number }[]): number => {
+  if (!cumLoc || cumLoc.length < 2) return 0;
+
+  // Ensure data is sorted chronologically if it's not already guaranteed
+  // For this mock data, it is sorted.
+
+  const weeklyGrowthRates: number[] = [];
+  for (let i = 1; i < cumLoc.length; i++) {
+    const prevCount = cumLoc[i - 1].count;
+    const currCount = cumLoc[i].count;
+    if (prevCount > 0) {
+      const growth = (currCount - prevCount) / prevCount;
+      weeklyGrowthRates.push(growth);
+    } else {
+      weeklyGrowthRates.push(0); // No growth if starting from zero
+    }
+  }
+
+  // Use a 4-week rolling average for smoothing
+  const N = 4;
+  if (weeklyGrowthRates.length === 0) return 0;
+
+  const relevantRates = weeklyGrowthRates.length < N
+    ? weeklyGrowthRates
+    : weeklyGrowthRates.slice(-N);
+
+  const sum = relevantRates.reduce((a, b) => a + b, 0);
+  return sum / relevantRates.length;
+};
+
 
 const EmergingVariantsWatchlist = () => {
+  const [variants, setVariants] = useState<EmergingVariant[]>([]);
+  const [selectedVariant, setSelectedVariant] = useState<EmergingVariant | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [recentVariantsRes, topRisersRes] = await Promise.all([
+          fetch('/emerging-variant/emergVar_recentVariants_mocked.json'),
+          fetch('/emerging-variant/emergVar_topRankingRisers_mocked.json'),
+        ]);
+
+        if (!recentVariantsRes.ok || !topRisersRes.ok) {
+          throw new Error('Failed to fetch emerging variant data');
+        }
+
+        const recentVariantsData: Omit<EmergingVariant, 'uniqueId'>[] = await recentVariantsRes.json();
+        const topRisersData: EmergingVariantRiser[] = await topRisersRes.json();
+
+        const riserMap = new Map(topRisersData.map(r => [r.cladeLineage, r]));
+
+        const processedData: EmergingVariant[] = recentVariantsData.map(variant => {
+          const uniqueId = `${variant.cladeLineage}::${variant.dissimilarityProtmutlist}`;
+          const riserInfo = riserMap.get(variant.cladeLineage);
+          const weeklyGrowthRate = calculateWeeklyGrowthRate(variant.cumLoc);
+
+          return {
+            ...variant,
+            uniqueId,
+            prevRanking: riserInfo?.prevRanking,
+            weeklyGrowthRate: weeklyGrowthRate,
+          };
+        }).sort((a, b) => a.currRanking - b.currRanking);
+
+        setVariants(processedData);
+        if (processedData.length > 0) {
+          setSelectedVariant(processedData[0]);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const detailViewContent = useMemo(() => {
+    if (!selectedVariant) {
+      return (
+        <CardContent>
+          <div className="flex items-center justify-center h-96 text-muted-foreground">
+            Select a variant from the table to view details.
+          </div>
+        </CardContent>
+      );
+    }
+    return (
+      <>
+        <CardHeader>
+          <CardTitle>
+            Detail View: <span className="text-primary font-mono text-base sm:text-lg md:text-xl">{selectedVariant.cladeLineage}</span>
+          </CardTitle>
+          <CardDescription>
+            Antigenic Distance: {selectedVariant.average_antigenic_distance} — Deep dive into the selected variant's characteristics and spread.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-6 lg:grid-cols-2">
+          <GrowthDynamicsPlot variant={selectedVariant} />
+          <div className="flex flex-col gap-6">
+            <EmergingVariantGeoMap variant={selectedVariant} />
+            <ContinentalTrendPlot variant={selectedVariant} />
+          </div>
+        </CardContent>
+      </>
+    );
+  }, [selectedVariant]);
+
+  if (loading) {
+    return <EmergingVariantsWatchlistSkeleton />;
+  }
+  
+  if (error) {
+    return (
+      <div className="text-destructive p-4 border border-destructive/50 rounded-md bg-destructive/10">
+        Error loading variant watchlist: {error}
+      </div>
+    );
+  }
+
   return (
     <div className="grid gap-6">
       {/* Row 1: Master View */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="min-w-0">
-          <CardHeader>
-            <CardTitle>Top 10 Emerging Variants</CardTitle>
-            <CardDescription>Click a row to see detailed analysis below.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[50px]">Rank</TableHead>
-                  <TableHead>Clade/Lineage</TableHead>
-                  <TableHead>Count (90d)</TableHead>
-                  <TableHead className="text-right">Growth</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow className="cursor-pointer">
-                  <TableCell className="font-medium">1 <ArrowUp className="inline size-3 text-green-500" /></TableCell>
-                  <TableCell>A/H1N1pdm09/6B.1A.5a.2a.1</TableCell>
-                  <TableCell>1,234</TableCell>
-                  <TableCell className="text-right">+5.2%</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">2 <ArrowDown className="inline size-3 text-red-500" /></TableCell>
-                  <TableCell>A/H3N2/3C.2a1b.2a.2b</TableCell>
-                  <TableCell>987</TableCell>
-                  <TableCell className="text-right">-1.1%</TableCell>
-                </TableRow>
-                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground">
-                    ... more data to be loaded here ...
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-        <PlaceholderCard
-          title="Top 10 Growth Comparison"
-          description="Cumulative counts of watchlist variants"
+        <EmergingVariantsTable
+          variants={variants}
+          selectedVariant={selectedVariant}
+          onSelectVariant={setSelectedVariant}
         />
+        <TopGrowthComparisonPlot variants={variants} />
       </div>
 
       {/* Row 2: Detail View */}
       <Card className="border-primary/50 border-2">
-        <CardHeader>
-            <CardTitle>Detail View: <span className="text-primary font-mono">A/H1N1pdm09/6B.1A.5a.2a.1</span></CardTitle>
-            <CardDescription>Deep dive into the selected variant's characteristics and spread.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-6 lg:grid-cols-2">
-           <PlaceholderCard
-            title="Growth Dynamics"
-            description="Weekly new detections and growth rate"
-          />
-           <PlaceholderCard
-            title="Geographic Footprint"
-            description="Recency-aware map and continental trends"
-          />
-        </CardContent>
+        {detailViewContent}
       </Card>
     </div>
   );
 };
+
+const EmergingVariantsWatchlistSkeleton = () => (
+  <div className="grid gap-6">
+    <div className="grid gap-6 lg:grid-cols-2">
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-48 w-full" />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-48 w-full" />
+        </CardContent>
+      </Card>
+    </div>
+    <Card className="border-primary/50 border-2">
+      <CardHeader>
+        <Skeleton className="h-6 w-1/2" />
+        <Skeleton className="h-4 w-3/4" />
+      </CardHeader>
+      <CardContent className="grid gap-6 lg:grid-cols-2">
+        <Skeleton className="h-96 w-full" />
+        <Skeleton className="h-96 w-full" />
+      </CardContent>
+    </Card>
+  </div>
+);
 
 export default EmergingVariantsWatchlist;

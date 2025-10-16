@@ -35,3 +35,52 @@ export interface CountryCountTotal {
   totalNumCountries: number;
   utcTimestamp: string;
 }
+
+// --- Emerging Variants ---
+
+export interface EmergingVariantMapPoint {
+  city: string;
+  ctry: string;
+  dt: string; // YYYYMMDD
+  lat: string;
+  lng: string;
+  ct: number;
+}
+
+export interface EmergingVariantContinentData {
+  continent: string;
+  monthlydata: {
+    date: string; // YYYYMM
+    count: number;
+  }[];
+}
+
+export interface EmergingVariantCumLoc {
+  yearweek: number; // YYYYWW
+  count: number;
+}
+
+export interface EmergingVariant {
+  uniqueId: string;
+  variant: string;
+  cladeLineage: string;
+  count: number;
+  currRanking: number;
+  dissimilarityProtmutlist: string;
+  average_antigenic_distance: string;
+  cumLoc: EmergingVariantCumLoc[];
+  continents: EmergingVariantContinentData[];
+  map: EmergingVariantMapPoint[];
+  // Merged fields
+  prevRanking?: number;
+  // Calculated fields
+  weeklyGrowthRate?: number;
+}
+
+export interface EmergingVariantRiser {
+  variant: string;
+  cladeLineage: string;
+  currRanking: number;
+  prevRanking: number;
+  topRankingRiserScore: number;
+}
