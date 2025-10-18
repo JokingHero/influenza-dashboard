@@ -116,7 +116,7 @@ const GlobalMonthlyCountsPlot: React.FC<GlobalMonthlyCountsPlotProps> = ({ h1n1D
         .attr('width', x.bandwidth())
         .attr('height', height - margin.top - margin.bottom)
         .style('fill', 'transparent')
-        .on('mouseover', function(event, d) {
+        .on('mouseover', function(_event, d) {
           bars.filter(barData => barData.data.month === d.month)
             .attr('fill', 'var(--color-primary)');
 
