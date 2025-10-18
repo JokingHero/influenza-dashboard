@@ -196,7 +196,7 @@ const GlobalGeoMap: React.FC<GlobalGeoMapProps> = ({ h1n1MapData, h3n2MapData })
         <CardTitle>Global Geographic Distribution</CardTitle>
         <CardDescription>Country color indicates dominant subtype (&gt;60% of submissions). Grey indicates no data. Use scroll or buttons to zoom.</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0 sm:p-6 sm:pt-0">
         {isWorldLoading || !world ? (
           <div className="w-full h-[500px] flex items-center justify-center bg-muted/20 text-muted-foreground">
             Loading map...

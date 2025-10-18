@@ -25,3 +25,4 @@ dist-ssr
 
 public/*.md
 public/*.txt
+public/resample.py

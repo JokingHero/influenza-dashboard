@@ -21,7 +21,7 @@ export function useGlobalData() {
         const baseUrl = import.meta.env.BASE_URL;
         const responses = await Promise.all([
             fetch(`${baseUrl}variant-tracker/weekRegion2perc_h1n1.json`),
-            fetch(`${baseUrl}variant-tracker/weekRegion2perc_h3n2.json`),
+            fetch(`${baseUrl}variant-tracker/weekRegion2perc_resampled.json`),
             fetch(`${baseUrl}variant-tracker/countryCountTotal_h1n1.json`),
             fetch(`${baseUrl}variant-tracker/countryCountTotal_h3n2.json`),
             fetch(`${baseUrl}variant-tracker/map_h1n1.json`),
