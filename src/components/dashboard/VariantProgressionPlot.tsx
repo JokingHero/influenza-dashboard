@@ -165,7 +165,7 @@ const VariantProgressionPlot: React.FC<VariantProgressionPlotProps> = ({ h1n1Dat
         </div>
       </CardHeader>
       <CardContent>
-        <CardAction className="flex justify-end mb-4">
+        <CardAction className="flex justify-end">
           <ToggleGroup type="single" value={view} onValueChange={(value: ViewType) => value && setView(value)} size="sm">
             <ToggleGroupItem value="proportions">Proportions</ToggleGroupItem>
             <ToggleGroupItem value="counts">Raw Counts</ToggleGroupItem>

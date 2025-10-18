@@ -57,7 +57,15 @@ const GlobalMonthlyCountsPlot: React.FC<GlobalMonthlyCountsPlotProps> = ({ h1n1D
     const width = 900;
     const height = 500;
     const margin = { top: 30, right: 30, bottom: 90, left: 90 };
+    
+    const keys = ['h1n1Count', 'h3n2Count'];
+    const stack = d3.stack<MonthlyDataPoint>().keys(keys);
+    const series = stack(processedData);
 
+    const color = d3.scaleOrdinal<string>()
+      .domain(keys)
+      .range(['var(--color-chart-1)', 'var(--color-chart-2)']);
+      
     const x = d3.scaleBand<string>()
       .domain(processedData.map(d => d.month))
       .range([margin.left, width - margin.right])
@@ -70,7 +78,6 @@ const GlobalMonthlyCountsPlot: React.FC<GlobalMonthlyCountsPlotProps> = ({ h1n1D
 
     svg.attr('viewBox', `0 0 ${width} ${height}`);
 
-    // Tooltip
     const tooltip = d3.select('body').append('div')
       .attr("class", "d3-tooltip")
       .style("position", "absolute")
@@ -83,45 +90,61 @@ const GlobalMonthlyCountsPlot: React.FC<GlobalMonthlyCountsPlotProps> = ({ h1n1D
       .style("pointer-events", "none")
       .style("font-size", "12px");
 
-    const bars = svg.append('g')
+    // --- VISIBLE BARS ---
+    const barGroups = svg.append('g')
+      .selectAll('g')
+      .data(series)
+      .join('g')
+        .attr('fill', d => color(d.key));
+
+    const bars = barGroups.selectAll('rect')
+      .data(d => d)
+      .join('rect')
+        .attr('x', d => x(d.data.month) as number) 
+        .attr('y', d => y(d[1])) 
+        .attr('width', x.bandwidth())
+        .attr('height', d => y(d[0]) - y(d[1])); 
+
+    // --- HOVER LOGIC ---
+    svg.append('g')
+      .attr('class', 'hover-layer')
       .selectAll('rect')
       .data(processedData)
       .join('rect')
         .attr('x', d => x(d.month) as number)
-        .attr('y', d => y(d.totalCount))
+        .attr('y', margin.top)
         .attr('width', x.bandwidth())
-        .attr('height', d => y(0) - y(d.totalCount))
-        .attr('fill', 'var(--color-chart-3)');
+        .attr('height', height - margin.top - margin.bottom)
+        .style('fill', 'transparent')
+        .on('mouseover', function(event, d) {
+          bars.filter(barData => barData.data.month === d.month)
+            .attr('fill', 'var(--color-primary)');
 
-    // Tooltip events
-    bars.on('mouseover', function (_event, _d) {
-        d3.select(this).attr('fill', 'var(--color-primary)');
-        tooltip.style('visibility', 'visible');
-      })
-      .on('mousemove', function (event, d) {
-        tooltip
-          .html(`
-            <div class="font-bold mb-1">${d.month}</div>
-            <div style="display: flex; align-items: center; gap: 4px;">
-              <span style="color:var(--color-chart-1)">●</span> H1N1: <strong>${d.h1n1Count.toLocaleString()}</strong>
-            </div>
-            <div style="display: flex; align-items: center; gap: 4px;">
-              <span style="color:var(--color-chart-2)">●</span> H3N2: <strong>${d.h3n2Count.toLocaleString()}</strong>
-            </div>
-            <div class="mt-1 border-t pt-1">Total: <strong>${d.totalCount.toLocaleString()}</strong></div>
-          `)
-          .style('top', `${event.pageY - 10}px`)
-          .style('left', `${event.pageX + 10}px`);
-      })
-      .on('mouseout', function () {
-        d3.select(this).attr('fill', 'var(--color-chart-3)');
-        tooltip.style('visibility', 'hidden');
-      });
+          tooltip.style('visibility', 'visible');
+        })
+        .on('mousemove', function (event, d) {
+          tooltip
+            .html(`
+              <div class="font-bold mb-1">${d.month}</div>
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <span style="color:var(--color-chart-1)">●</span> H1N1: <strong>${d.h1n1Count.toLocaleString()}</strong>
+              </div>
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <span style="color:var(--color-chart-2)">●</span> H3N2: <strong>${d.h3n2Count.toLocaleString()}</strong>
+              </div>
+              <div class="mt-1 border-t pt-1">Total: <strong>${d.totalCount.toLocaleString()}</strong></div>
+            `)
+            .style('top', `${event.pageY - 10}px`)
+            .style('left', `${event.pageX + 10}px`);
+        })
+        .on('mouseout', function () {
+          bars.attr('fill', null);
+          tooltip.style('visibility', 'hidden');
+        });
 
-    // X Axis
+    // --- AXES and LABELS ---
     const xAxis = svg.append('g')
       .attr('transform', `translate(0,${height - margin.bottom})`)
-      // Filter ticks to prevent overlap. Shows roughly every 4th month.
       .call(d3.axisBottom(x).tickValues(x.domain().filter((_d, i) => i % 4 === 0)));
       
     xAxis.selectAll("text")
@@ -129,14 +152,12 @@ const GlobalMonthlyCountsPlot: React.FC<GlobalMonthlyCountsPlotProps> = ({ h1n1D
       .style("text-anchor", "end")
       .style("font-size", "20px");
 
-    // Y Axis 
     const yAxis = svg.append('g')
       .attr('transform', `translate(${margin.left},0)`)
       .call(d3.axisLeft(y).ticks(5, "s"));
       
     yAxis.selectAll("text").style("font-size", "20px");
 
-    // Y Axis Label
     svg.append("text")
       .attr("text-anchor", "middle")
       .attr("transform", "rotate(-90)")
@@ -146,7 +167,6 @@ const GlobalMonthlyCountsPlot: React.FC<GlobalMonthlyCountsPlotProps> = ({ h1n1D
       .style("fill", "var(--color-foreground)")
       .text("Number of Sequences");
       
-    // X Axis Label
     svg.append("text")
       .attr("text-anchor", "middle")
       .attr("x", width / 2)
@@ -166,12 +186,11 @@ const GlobalMonthlyCountsPlot: React.FC<GlobalMonthlyCountsPlotProps> = ({ h1n1D
       <CardHeader>
         <CardTitle>Global Submissions by Month</CardTitle>
         <CardDescription>
-          Total number of sequences submitted globally per month. Hover over a bar for details.
+          Total number of H1N1 and H3N2 sequences submitted globally per month. Hover over a bar to highlight the full stack.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {/* SVG is no longer interactive, so cursor classes are removed */}
-        <svg ref={svgRef} className="w-full h-auto" />
+        <svg ref={svgRef} className="w-full h-auto cursor-pointer" />
       </CardContent>
     </Card>
   );
